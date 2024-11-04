@@ -1,5 +1,3 @@
-Aqui está a documentação em formato Markdown para o projeto de serviço SOAP com autenticação JWT usando Flask, Spyne e SQLAlchemy.
-
 ```markdown
 # Projeto: Serviço SOAP de Gerenciamento de Usuários com Autenticação JWT
 
