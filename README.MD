@@ -1,8 +1,8 @@
-```markdown
 # Projeto: Serviço SOAP de Gerenciamento de Usuários com Autenticação JWT
 
 ## Visão Geral
 Este projeto implementa um serviço SOAP para gerenciar dados de usuários, permitindo operações de autenticação, criação, atualização, exclusão e consulta de usuários. A autenticação é realizada via JWT, e cada solicitação deve conter um token válido para que seja executada. O banco de dados utilizado é SQLite, e a estrutura do banco de dados é inicializada automaticamente, criando um usuário administrador padrão na primeira execução.
+```markdown
 
 ## Tecnologias Utilizadas
 - **Python 3.10** ou superior
