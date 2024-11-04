@@ -134,5 +134,3 @@ Para acessar os métodos `add_user`, `update_user`, `delete_user`, `get_user` e 
 ## Licença
 Este projeto é distribuído sob a licença MIT.
 ```
-
-Essa documentação fornece uma visão geral completa do projeto, desde sua execução até como realizar chamadas autenticadas com o SoapUI.
