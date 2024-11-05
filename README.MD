@@ -16,7 +16,6 @@ Este projeto implementa um serviço SOAP para gerenciar dados de usuários, perm
 ```markdown
 ## Estrutura de Pastas
 
-```plaintext
 .
 ├── app/
 │   ├── user_service.py   # Código do serviço SOAP
