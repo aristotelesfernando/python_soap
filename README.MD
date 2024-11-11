@@ -1,135 +1,269 @@
-# Projeto: Serviço SOAP de Gerenciamento de Usuários com Autenticação JWT
+# Sistema de Gerenciamento de Usuários e Grupos - API SOAP
 
-## Visão Geral
-Este projeto implementa um serviço SOAP para gerenciar dados de usuários, permitindo operações de autenticação, criação, atualização, exclusão e consulta de usuários. A autenticação é realizada via JWT, e cada solicitação deve conter um token válido para que seja executada. O banco de dados utilizado é SQLite, e a estrutura do banco de dados é inicializada automaticamente, criando um usuário administrador padrão na primeira execução.
-```markdown
+## 🚀 Tecnologias Utilizadas
 
-## Tecnologias Utilizadas
-- **Python 3.10** ou superior
-- **Flask** para gerenciamento do servidor
-- **Spyne** para criar serviços SOAP
-- **SQLAlchemy** para operações de banco de dados
-- **JWT (Json Web Token)** para autenticação
-- **bcrypt** para hashing seguro de senhas
-- **SQLite** para armazenamento de dados
-- **Docker** e **Docker Compose** (opcional) para deploy
+### Linguagem Principal
+- Python 3.x
 
-## Estrutura de Pastas
+### Bibliotecas Principais
+- **Flask**: Framework web leve e flexível
+- **Spyne**: Framework para criação de serviços SOAP
+- **SQLAlchemy**: ORM (Object Relational Mapper) para Python
+- **PyJWT**: Implementação do JSON Web Token
+- **BCrypt**: Biblioteca para hash de senhas
+- **WSGI**: Interface para comunicação entre servidor web e aplicações Python
 
-```plaintext
+### Containerização
+- **Docker**: Plataforma de containerização
+- **Docker Compose**: Orquestrador de containers
+
+## 📁 Estrutura do Projeto
+```
 .
 ├── app/
-│   ├── user_service.py   # Código do serviço SOAP
-│   ├── Dockerfile        # Arquivo para criação da imagem Docker
-│   ├── docker-compose.yml # Arquivo de configuração do Docker Compose
-├── data/                 # Diretório para armazenamento do banco de dados SQLite
-└── README.md             # Documentação do projeto
+│   ├── data/
+│   │   └── users.db        # Banco de dados SQLite
+│   └── app.py             # Arquivo principal da aplicação
+├── Dockerfile            # Configuração do container da aplicação
+├── docker-compose.yml    # Configuração dos serviços
+└── requirements.txt      # Dependências do projeto
 ```
 
-## Inicialização do Banco de Dados
-Na primeira execução, o banco de dados será criado automaticamente na pasta `data/` com um usuário `admin` padrão:
-- **Usuário**: `admin`
-- **Senha**: `adm@123` (hash seguro via `bcrypt`)
 
-## Endpoints Disponíveis
+## 💾 Banco de Dados
 
-### Rota Base
-| Método | Endpoint | Descrição                                             |
-| ------ | -------- | ----------------------------------------------------- |
-| GET    | `/`      | Rota base que confirma que o serviço está disponível. |
+### Sistema Gerenciador (SGBD)
+- SQLite3
+- Localização: `/app/data/users.db`
+- Criação automática na primeira execução
 
-### Métodos SOAP
-Todos os métodos SOAP abaixo estão disponíveis no endpoint `/soap`.
+### Estrutura de Tabelas
 
-| Método              | Descrição                                                                | Parâmetros                                                                             | Retorno                              |
-| ------------------- | ------------------------------------------------------------------------ | -------------------------------------------------------------------------------------- | ------------------------------------ |
-| `authenticate_user` | Autentica um usuário e retorna um token JWT.                             | `username`, `password`                                                                 | Token JWT ou mensagem de erro        |
-| `add_user`          | Adiciona um novo usuário ao sistema. Necessita de token válido.          | `username`, `first_name`, `last_name`, `mobile_number`, `email`, `company`, `password` | Mensagem de sucesso ou erro          |
-| `update_user`       | Atualiza os dados de um usuário específico. Necessita de token válido.   | `user_id`, `first_name`, `last_name`, `mobile_number`, `email`, `company`, `password`  | Mensagem de sucesso ou erro          |
-| `delete_user`       | Exclui um usuário específico. Necessita de token válido.                 | `user_id`                                                                              | Mensagem de sucesso ou erro          |
-| `get_user`          | Retorna informações de um usuário específico. Necessita de token válido. | `user_id`                                                                              | Dados do usuário ou mensagem de erro |
-| `list_users`        | Lista todos os usuários cadastrados. Necessita de token válido.          | Nenhum                                                                                 | Lista de dados dos usuários          |
+#### Tabela `users`
+| Campo         | Tipo     | Descrição               |
+| ------------- | -------- | ----------------------- |
+| id            | Integer  | Chave primária          |
+| username      | String   | Nome de usuário (único) |
+| first_name    | String   | Primeiro nome           |
+| last_name     | String   | Sobrenome               |
+| mobile_number | String   | Número de telefone      |
+| email         | String   | Email (único)           |
+| company       | String   | Empresa                 |
+| created_at    | DateTime | Data de criação         |
+| password      | String   | Senha (hash bcrypt)     |
 
-## Instalação e Configuração
+#### Tabela `groups`
+| Campo      | Tipo    | Descrição             |
+| ---------- | ------- | --------------------- |
+| id         | Integer | Chave primária        |
+| group_name | String  | Nome do grupo (único) |
 
-### Pré-requisitos
-Certifique-se de ter o Python 3.10+ e Docker (opcional) instalados.
+#### Tabela `user_groups`
+| Campo    | Tipo    | Descrição                     |
+| -------- | ------- | ----------------------------- |
+| id_user  | Integer | Chave estrangeira (users.id)  |
+| id_group | Integer | Chave estrangeira (groups.id) |
 
-### Configuração de Ambiente
+### Usuário Administrador Padrão
+- Username: `admin`
+- Senha: `adm@123`
+- Grupo: `SYSTEM`
+- Este usuário é criado automaticamente na primeira execução
 
-1. Clone o repositório:
-   ```bash
-   git clone <URL-do-repositório>
-   cd <diretório-do-projeto>
-   ```
+## 🔐 Autenticação e Segurança
 
-2. Instale as dependências:
-   ```bash
-   pip install -r requirements.txt
-   ```
+### JWT (JSON Web Token)
+- Tempo de expiração: 120 minutos
+- Gerado no login bem-sucedido
+- Requerido para todas as operações (exceto autenticação)
 
-### Executando a Aplicação Localmente
+### Formato do Token
+- Header: `Authorization: Bearer <token>`
 
-Para iniciar o servidor, execute:
+### Processo de Autenticação
+1. Cliente envia credenciais (username/password)
+2. Sistema valida credenciais
+3. Se válido, retorna token JWT
+4. Token deve ser incluído em todas requisições subsequentes
+
+## 🚀 Instalação e Execução
+
+### Usando Docker (Recomendado)
+
+1. Clone o repositório
 ```bash
-python app/user_service.py
+git clone <repository-url>
 ```
-A aplicação estará disponível em `http://localhost:5000/`.
 
-### Executando a Aplicação com Docker
-
-#### Build da Imagem Docker
-
-Para criar a imagem Docker, execute:
+2. Construa e inicie os containers
 ```bash
-docker build -t user-soap-service .
+docker-compose up -d --build
 ```
 
-#### Utilizando Docker Compose
-1. Inicie o serviço:
-   ```bash
-   docker-compose up -d
-   ```
-2. O serviço estará disponível em `http://localhost:5000/`.
+3. Verifique os logs (opcional)
+```bash
+docker-compose logs -f
+```
 
-## Autenticação via JWT
+4. Para parar os containers
+```bash
+docker-compose down
+```
 
-Para acessar os métodos `add_user`, `update_user`, `delete_user`, `get_user` e `list_users`, é necessário fornecer o token JWT obtido pelo método `authenticate_user`.
+### Instalação Manual (Alternativa)
 
-### Usando o SoapUI para Enviar o Token JWT
+1. Clone o repositório
+```bash
+git clone <repository-url>
+```
 
-1. No SoapUI, configure o cabeçalho `Authorization` com o valor: `Bearer <seu_token_jwt>`.
-2. Envie a requisição para o método desejado.
+2. Crie um ambiente virtual
+```bash
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+venv\Scripts\activate     # Windows
+```
 
-## Exemplo de Requisição SOAP
+3. Instale as dependências
+```bash
+pip install -r requirements.txt
+```
 
-### Exemplo `authenticate_user`
+4. Execute a aplicação
+```bash
+python app.py
+```
 
-#### Requisição
+O servidor será iniciado em `http://localhost:5000`
 
+## 📝 Exemplos de Requisições SOAP
+
+### Autenticação (authenticate_user)
 ```xml
-<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:usr="spyne.examples.userservice">
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:user="spyne.examples.userservice">
    <soapenv:Header/>
    <soapenv:Body>
-      <usr:authenticate_user>
-         <usr:username>admin</usr:username>
-         <usr:password>adm@123</usr:password>
-      </usr:authenticate_user>
+      <user:authenticate_user>
+         <user:username>admin</user:username>
+         <user:password>adm@123</user:password>
+      </user:authenticate_user>
    </soapenv:Body>
 </soapenv:Envelope>
 ```
 
-#### Resposta (com Token JWT)
-
+### Criar Novo Usuário (add_user)
 ```xml
-<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:user="spyne.examples.userservice">
+   <soapenv:Header>
+      <Authorization>Bearer {seu-token-jwt}</Authorization>
+   </soapenv:Header>
    <soapenv:Body>
-      <authenticate_userResponse>
-         <authenticate_userResult>Autenticação bem-sucedida. Token: <token_jwt></authenticate_userResult>
-      </authenticate_userResponse>
+      <user:add_user>
+         <user:username>joao.silva</user:username>
+         <user:first_name>João</user:first_name>
+         <user:last_name>Silva</user:last_name>
+         <user:mobile_number>11999999999</user:mobile_number>
+         <user:email>joao.silva@example.com</user:email>
+         <user:company>Empresa XYZ</user:company>
+         <user:password>senha123</user:password>
+      </user:add_user>
    </soapenv:Body>
 </soapenv:Envelope>
 ```
 
-## Licença
-Este projeto é distribuído sob a licença MIT.
+### Criar Novo Grupo (add_group)
+```xml
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:user="spyne.examples.userservice">
+   <soapenv:Header>
+      <Authorization>Bearer {seu-token-jwt}</Authorization>
+   </soapenv:Header>
+   <soapenv:Body>
+      <user:add_group>
+         <user:group_name>Vendas</user:group_name>
+      </user:add_group>
+   </soapenv:Body>
+</soapenv:Envelope>
+```
+
+### Adicionar Usuário ao Grupo (add_user_to_group)
+```xml
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:user="spyne.examples.userservice">
+   <soapenv:Header>
+      <Authorization>Bearer {seu-token-jwt}</Authorization>
+   </soapenv:Header>
+   <soapenv:Body>
+      <user:add_user_to_group>
+         <user:user_id>2</user:user_id>
+         <user:group_id>1</user:group_id>
+      </user:add_user_to_group>
+   </soapenv:Body>
+</soapenv:Envelope>
+```
+
+### Listar Usuários (list_users)
+```xml
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:user="spyne.examples.userservice">
+   <soapenv:Header>
+      <Authorization>Bearer {seu-token-jwt}</Authorization>
+   </soapenv:Header>
+   <soapenv:Body>
+      <user:list_users/>
+   </soapenv:Body>
+</soapenv:Envelope>
+```
+
+### Listar Usuários de um Grupo (list_users_in_group)
+```xml
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:user="spyne.examples.userservice">
+   <soapenv:Header>
+      <Authorization>Bearer {seu-token-jwt}</Authorization>
+   </soapenv:Header>
+   <soapenv:Body>
+      <user:list_users_in_group>
+         <user:group_id>1</user:group_id>
+      </user:list_users_in_group>
+   </soapenv:Body>
+</soapenv:Envelope>
+```
+
+## 📝 Notas Importantes
+
+- Todas as senhas são armazenadas com hash BCrypt
+- O banco de dados é criado automaticamente no primeiro uso
+- O grupo SYSTEM e usuário admin são criados automaticamente
+- Todas as operações (exceto autenticação) requerem token JWT válido
+- O servidor SOAP está disponível em `/soap`
+
+## 🔒 Recomendações de Segurança
+
+1. Altere a senha do usuário admin após a primeira execução
+2. Modifique a SECRET_KEY em ambiente de produção
+3. Configure HTTPS em ambiente de produção
+4. Implemente política de renovação de tokens
+5. Mantenha as dependências atualizadas
+6. Em ambiente de produção, considere usar um banco de dados mais robusto como PostgreSQL
+7. Configure limites de requisições (rate limiting)
+8. Implemente monitoramento e logging
+
+## 🛠 Testes das Requisições
+
+Para testar as requisições SOAP, você pode usar:
+- SoapUI
+- Postman (com raw XML)
+- cURL
+
+Exemplo de teste com cURL:
+```bash
+curl -X POST \
+  http://localhost:5000/soap \
+  -H 'Content-Type: text/xml' \
+  -d '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:user="spyne.examples.userservice">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <user:authenticate_user>
+         <user:username>admin</user:username>
+         <user:password>adm@123</user:password>
+      </user:authenticate_user>
+   </soapenv:Body>
+</soapenv:Envelope>'
+```
